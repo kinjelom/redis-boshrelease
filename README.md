@@ -62,11 +62,11 @@ Redis Sentinel provides high availability for Redis. In this bosh release, you c
 [...]
   - name: redis
     release: redis
+    properties:
+      bind_static_ip: true
+      password: ((redis_password)
   - name: redis-sentinel
     release: redis
-  properties:
-    bind_static_ip: true
-    password: ((redis_password)
 ```
 
 ### Update
