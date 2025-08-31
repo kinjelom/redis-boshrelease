@@ -1,0 +1,40 @@
+---
+
+# Admin read-only: read all keys, no writes
+
+- type: replace
+  path: /instance_groups/name=redis/jobs/name=redis/properties?/redis?/custom_config?/-
+  value: 'user admin_ro on >"((admin_ro_password))" ~* &* +@read' 
+
+- type: replace
+  path: /variables/name=admin_ro_password?
+  value:
+    name: admin_ro_password
+    type: password
+
+
+# Application app1: full data access within app1:* only, but no dangerous/admin commands
+
+- type: replace
+  path: /instance_groups/name=redis/jobs/name=redis/properties?/redis?/custom_config?/-
+  value: 'user app1 on >"((app1_user_password))" ~app1:* &app1:* +@read +@write -FLUSHALL -FLUSHDB -CONFIG -DEBUG -MONITOR -KEYS -SCAN'
+
+- type: replace
+  path: /variables/name=app1_user_password?
+  value:
+    name: app1_user_password
+    type: password
+
+# Application app2: full data access within app2:* only, but no dangerous/admin commands
+
+- type: replace
+  path: /instance_groups/name=redis/jobs/name=redis/properties?/redis?/custom_config?/-
+  value: 'user app2 on >"((app2_user_password))" ~app2:* &app2:* +@read +@write -FLUSHALL -FLUSHDB -CONFIG -DEBUG -MONITOR -KEYS -SCAN'
+
+- type: replace
+  path: /variables/name=app2_user_password?
+  value:
+    name: app2_user_password
+    type: password
+
+

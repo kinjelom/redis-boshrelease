@@ -1,32 +1,45 @@
 ---
 name: redis-sentinel
-packages: [redis-4]
+packages: [redis]
 templates:
-  config/bpm.yml.erb: config/bpm.yml
+  config/bpm.yml.erb:    config/bpm.yml
   config/sentinel.conf.erb: config/sentinel.conf
-  bin/pre_start.sh: bin/pre_start.sh
-  bin/wrapper.sh: bin/wrapper.sh
+  bin/pre_start.sh.erb:  bin/pre_start.sh
 
 consumes:
 - name: redis
   type: redis
-  
+
 properties:
 
-  redis.maxclients:
-    description: Set the max number of connected clients at the same time.
-    default: 10000
-
-  base_dir:
-    description: Base dir for storing database files
-    default: /var/vcap/data/redis-sentinel
-
   sentinel.port:
-    description: Port to listen for requests to redis server
+    description: >
+      TCP port the Sentinel process listens on for client connections
+      (e.g. SENTINEL get-master-addr-by-name). Default is 26379.
     default: 26379
-  sentinel.redis_port:
-    description: Port your redis slaves are running on 
-    default: 6379
+
+  sentinel.listen_on_instance_ip:
+    description: >
+      If true, Sentinel binds only to the VM's instance IP (spec.ip).
+      If false, it binds to 0.0.0.0 and listens on all interfaces.
+      Recommended: true, to avoid exposing the Sentinel API on unintended networks.
+    default: true
+
   sentinel.quorum:
-    description: Quorum for "# sentinel monitor <master-name> <ip> <redis-port> <quorum>"
+    description: >
+      Quorum value for 'sentinel monitor <master-name> <ip> <redis-port> <quorum>'.
+      Minimum number of Sentinels that must agree before failover is executed.
     default: 2
+
+  sentinel.master_name:
+    description: >
+      Logical name of the monitored master. All Sentinels in the same cluster
+      must use the exact same name. Clients use this in 'SENTINEL get-master-addr-by-name'.
+    default: redis-primary
+    example: ((deployment_name))
+
+  sentinel.custom_config:
+    description: >
+      Extra raw sentinel.conf directives appended at the end of the generated config.
+      Each item must be a full line string. Last-write-wins semantics apply.
+    default: []

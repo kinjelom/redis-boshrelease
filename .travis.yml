@@ -1,3 +1,0 @@
-script: 'bundle exec rake spec'
-rvm:
-  - ruby-2.2.4

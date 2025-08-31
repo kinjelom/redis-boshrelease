@@ -1,0 +1,81 @@
+name: ((deployment_name))
+
+addons:
+- name: bpm
+  jobs:
+  - name: bpm
+    release: bpm
+
+instance_groups:
+- name: redis
+  azs: ((redis_azs))
+  instances: ((redis_instances))
+  vm_type: ((redis_vm_type))
+  stemcell: default
+  persistent_disk_type: ((redis_persistent_disk_type))
+  networks: [{name: default}]
+  jobs:
+  - name: redis
+    release: redis
+    properties:
+      redis:
+        admin:
+          user: admin
+          password: ((admin_password))
+        metrics:
+          user: metrics
+          password: ((metrics_password))
+        replication:
+          enabled: true
+          user: replication
+          password: ((replication_password))
+  - name: redis_exporter
+    release: redis
+    properties:
+      redis_exporter:
+        port: 9121
+        redis_user: metrics
+        redis_password: ((metrics_password))
+        is_cluster: true
+  - name: redis-sentinel
+    release: redis
+    properties:
+      sentinel:
+        master_name: ((deployment_name))
+
+- name: tests-runner
+  azs: ((redis_azs))
+  instances: 1
+  lifecycle: errand
+  vm_type: default
+  stemcell: default
+  networks: [{name: default}]
+  jobs:
+  - name: sanity-tests
+    release: redis
+
+variables:
+- name: admin_password
+  type: password
+- name: replication_password
+  type: password
+- name: metrics_password
+  type: password
+
+stemcells:
+- alias: default
+  os: ubuntu-jammy
+  version: latest
+
+releases:
+- name: bpm
+  version: latest
+- name: redis
+  version: latest
+
+update:
+  canaries: 0
+  max_in_flight: 1
+  serial: true
+  canary_watch_time: 1000-20000
+  update_watch_time: 1000-20000

@@ -1,61 +1,99 @@
 ---
 name: redis
-packages: [redis-4]
+packages: [redis]
 templates:
-  config/bpm.yml.erb: config/bpm.yml
+  bin/pre_start.sh.erb: bin/pre_start.sh
+  config/bpm.yml.erb:   config/bpm.yml
   config/redis.conf.erb: config/redis.conf
-  bin/health_check: bin/health_check
-  bin/pre_start.sh: bin/pre_start.sh
 
 provides:
 - name: redis
   type: redis
   properties:
-  - port
-  - password
-  - base_dir
+  # Expose only what other jobs actually consume
+  - redis.port
+  - redis.maxclients
+  - redis.admin.user
+  - redis.admin.password
+  - redis.replication.enabled
+  - redis.replication.user
+  - redis.replication.password
 
 consumes:
 - name: redis
   type: redis
 
 properties:
-  port:
-    description: Port to listen for requests to redis server
+
+  redis.port:
+    description: TCP port the Redis server listens on.
     default: 6379
-  password:
-    description: Password to access redis server
-  base_dir:
-    description: Base dir for storing database files
-    default: /var/vcap/store/redis
-  redis_save_intervals:
+
+  redis.listen_on_instance_ip:
+    description: >
+      If true, Redis binds only to the VM's instance IP (spec.ip).
+      If false, it binds to 0.0.0.0 and listens on all interfaces.
+    default: false
+
+  redis.protected_mode:
+    description: >
+      Enables Redis protected mode safety check.
+      If true (default), Redis blocks unsafe configs (e.g. 0.0.0.0 without ACL).
+      Set false only if you rely solely on ACLs and firewalls.
+    default: true
+
+  redis.maxclients:
+    description: >
+      Maximum number of concurrent client connections. Effective cap is
+      min(value, open_files_limit - 32). Tune BPM 'limits.open_files' accordingly.
+    default: 10000
+
+  redis.save_intervals:
+    description: >
+      RDB snapshot rules. Each entry is "seconds changes" and translates to
+      'save <seconds> <changes>'. All entries are cumulative.
     default:
       - 900 1
       - 300 10
       - 60 10000
-    description: save <seconds> <changes>; save points to the rdb snapshot after #<seconds> seconds have passed if at least #<changes> key changes have occurred
-  bind_static_ip:
-    description: Specify this property if you would like the bind address of a given instance to be automatically set to its assigned static IP
-    default: false
-  consul.service.name:
-    description: Name for advertising/discovering this service over consul (defaults to deployment name)
 
-  health.interval:
-    description: Interval for consul to perform health checks
-    default: "20s"
-  health.disk.critical:
-    description: Percentage of persistent disk full to trigger critial health alert
-    default: 98
-  health.disk.warning:
-    description: Percentage of persistent disk full to trigger warning health alert
-    default: 50
+  redis.admin.user:
+    description: >
+      Admin ACL username with full access (+@all). Used for operational tasks and test errands.
+    default: admin
+  redis.admin.password:
+    description: Password for the admin ACL user.
 
-  redis.maxclients:
-    description: Set the max number of connected clients at the same time.
-    default: 10000
-  redis.replication:
-    description: When set to false, master/slave replication will be disabled and all instances will run as standalone deployments.
+  redis.metrics.user:
+    description: >
+      Redis ACL username for Prometheus redis_exporter.
+      This account is intended only for monitoring purposes.
+      It should have read-only access and selected commands
+      needed to run INFO/CLIENT/MEMORY/CLUSTER/latency/slowlog.
+    default: metrics
+  redis.metrics.password:
+    description: Password for the metrics ACL user.
+
+  redis.replication.enabled:
+    description: >
+      When true, non-bootstrap instances configure 'replicaof' and authenticate to the master
+      using redis.replication.user/password. Bootstrap instance runs as master.
     default: true
-  redis.raw_config:
-    description: Block literal representing redis configuration.  Appended at the end of redis.conf, the raw values provided will take precedence over any other configuration properties
-    default: "" 
+  redis.replication.user:
+    description: >
+      ACL username used by replicas and Sentinel to authenticate to the master (+@replication only).
+    default: sentinel_repl
+  redis.replication.password:
+    description: Password for the replication ACL user.
+
+  redis.custom_config:
+    description: >
+      Extra raw redis.conf directives appended at the end of the generated config.
+      Each item must be a full line string. Last-write-wins semantics apply.
+    default: []
+    example:
+      - 'maxmemory 2gb'
+      - 'maxmemory-policy allkeys-lru'
+      - 'client-query-buffer-limit 8mb'
+      - 'user admin_ro on >"((admin_ro_password))" ~* &* +@read'
+      - 'user app1 on >"((app1_user_password))" ~app1:* &app1:* +@read +@write -FLUSHALL -FLUSHDB -CONFIG -DEBUG -MONITOR -KEYS -SCAN'

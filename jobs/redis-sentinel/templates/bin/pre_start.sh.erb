@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DATA_DIR='/var/vcap/data/redis-sentinel'
+
+chpst -u root:root mkdir -p "$DATA_DIR/config"
+cp "/var/vcap/jobs/redis-sentinel/config/sentinel.conf" "$DATA_DIR/config/sentinel.conf"
+chpst -u root:root chown -R vcap:vcap "$DATA_DIR/config"

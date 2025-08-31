@@ -1,21 +1,18 @@
+<%-
+open_files = 12500
+link("redis").if_p("redis.maxclients") do |maxclients|
+  if maxclients.to_i > 0
+    open_files = (maxclients.to_i * 5) / 4
+  end
+end
+-%>
 ---
 processes:
 - name: redis-sentinel
-  executable: /var/vcap/jobs/redis-sentinel/bin/wrapper.sh
-  args:
-  - /var/vcap/jobs/redis-sentinel/config/sentinel.conf
-  
+  executable: /var/vcap/packages/redis/bin/redis-server
+  args: [ /var/vcap/data/redis-sentinel/config/sentinel.conf, --sentinel ]
   ephemeral_disk: true
-
   hooks:
     pre_start: /var/vcap/jobs/redis-sentinel/bin/pre_start.sh 
-
-<% if_p('redis.maxclients') do |maxclients| -%>
-<% if maxclients.to_i > 0 -%>
   limits:
-    open_files: <%= p("redis.maxclients").to_i.round * 1.25 %>
-<% else -%>
-  limits:
-    open_files: 12500
-<% end -%>
-<% end -%>
+    open_files: <%= open_files %>

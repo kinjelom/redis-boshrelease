@@ -1,0 +1,6 @@
+---
+name: redis
+dependencies: []
+files:
+- meta-info/blobs-versions.env
+- redis/redis-*.tar.gz

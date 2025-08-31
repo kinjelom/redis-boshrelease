@@ -1,0 +1,63 @@
+---
+processes:
+  - name: redis_exporter
+    executable: /var/vcap/packages/redis_exporter/bin/redis_exporter
+    args:
+      - "--web.listen-address=0.0.0.0:<%= p('redis_exporter.port') %>"
+      - "--web.telemetry-path=<%= p('redis_exporter.telemetry_path') %>"
+      - "--redis.addr=<%= p('redis_exporter.redis_addr') %>"
+<%- if_p("redis_exporter.redis_user") do |v| -%>
+      - "--redis.user=<%= v %>"
+<%- end -%>
+<%- if_p("redis_exporter.redis_password") do |v| -%>
+      - "--redis.password=<%= v %>"
+<%- end -%>
+<%- if p("redis_exporter.export_client_list") -%>
+      - "--export-client-list"
+<%- end -%>
+<%- if p("redis_exporter.export_client_port") -%>
+      - "--export-client-port"
+<%- end -%>
+<%- if p("redis_exporter.include_config_metrics") -%>
+      - "--include-config-metrics"
+<%- end -%>
+<%- unless p("redis_exporter.redact_config_metrics") -%>
+      - "--redact-config-metrics=false"
+<%- end -%>
+<%- if p("redis_exporter.include_system_metrics") -%>
+      - "--include-system-metrics"
+<%- end -%>
+<%- if p("redis_exporter.include_modules_metrics") -%>
+      - "--include-modules-metrics"
+<%- end -%>
+<%- if p("redis_exporter.is_cluster") -%>
+      - "--is-cluster"
+<%- end -%>
+<%- if p("redis_exporter.ping_on_connect") -%>
+      - "--ping-on-connect"
+<%- end -%>
+      - --connection-timeout=<%= p("redis_exporter.connection_timeout") %>
+      - --namespace=<%= p("redis_exporter.namespace") %>
+      - --log-level=<%= p("redis_exporter.log_level") %>
+      - --log-format=<%= p("redis_exporter.log_format") %>
+<%- if_p("redis_exporter.count_keys") do |v| -%>
+      - "--count-keys=<%= v %>"
+<%- end -%>
+<%- if_p("redis_exporter.check_keys") do |v| -%>
+      - "--check-keys=<%= v %>"
+<%- end -%>
+<%- if_p("redis_exporter.check_single_keys") do |v| -%>
+      - "--check-single-keys=<%= v %>"
+<%- end -%>
+<%- if_p("redis_exporter.check_streams") do |v| -%>
+      - "--check-streams=<%= v %>"
+<%- end -%>
+<%- if_p("redis_exporter.check_single_streams") do |v| -%>
+      - "--check-single-streams=<%= v %>"
+<%- end -%>
+<%- if p("redis_exporter.exclude_latency_histogram_metrics") -%>
+      - "--exclude-latency-histogram-metrics"
+<%- end -%>
+<%- if p("redis_exporter.redis_only_metrics") -%>
+      - "--redis-only-metrics"
+<%- end -%>

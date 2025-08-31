@@ -1,0 +1,5 @@
+check process redis_exporter
+  with pidfile   /var/vcap/sys/run/bpm/redis_exporter/redis_exporter.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start redis_exporter" with timeout 180 seconds
+  stop program  "/var/vcap/jobs/bpm/bin/bpm stop redis_exporter" with timeout 180 seconds
+  group vcap

@@ -1,6 +1,5 @@
----
+name: redis
 blobstore:
   provider: s3
   options:
-    bucket_name: redis-boshrelease
-final_name: redis
+    bucket_name: boshrelease-any

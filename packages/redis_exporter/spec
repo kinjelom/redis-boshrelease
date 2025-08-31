@@ -1,0 +1,6 @@
+---
+name: redis_exporter
+dependencies: []
+files:
+- meta-info/blobs-versions.env
+- redis_exporter/redis_exporter-*.tar.gz

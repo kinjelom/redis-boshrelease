@@ -1,0 +1,104 @@
+---
+name: redis_exporter
+
+packages:
+  - redis_exporter
+
+templates:
+  config/bpm.yml.erb: config/bpm.yml
+
+properties:
+  redis_exporter.port:
+    description: HTTP port for the Prometheus metrics endpoint.
+    default: 9121
+
+  redis_exporter.redis_addr:
+    description: Redis address to scrape (URI or host:port), e.g. redis://127.0.0.1:6379
+    default: redis://127.0.0.1:6379
+
+  redis_exporter.redis_user:
+    description: Redis ACL username for authentication.
+    default: "metrics"
+
+  redis_exporter.redis_password:
+    description: Redis password.
+
+  redis_exporter.telemetry_path:
+    description: Path under which metrics are exposed.
+    default: /metrics
+
+  redis_exporter.namespace:
+    description: Metrics namespace/prefix.
+    default: redis
+
+  redis_exporter.log_level:
+    description: Log level DEBUG, INFO, WARN, ERROR.
+    default: INFO
+
+  redis_exporter.log_format:
+    description: Log format txt or json.
+    default: json
+
+  redis_exporter.connection_timeout:
+    description: Timeout for connecting to Redis (e.g. "5s", "15s").
+    default: 15s
+
+  redis_exporter.ping_on_connect:
+    description: Ping Redis immediately after connecting.
+    default: false
+
+  redis_exporter.export_client_list:
+    description: Export per-client metrics from CLIENT LIST.
+    default: false
+
+  redis_exporter.export_client_port:
+    description: Include client port label (increases cardinality).
+    default: false
+
+  redis_exporter.include_config_metrics:
+    description: Export Redis CONFIG settings as metrics.
+    default: false
+
+  redis_exporter.redact_config_metrics:
+    description: Redact sensitive config metrics (keep true for safety).
+    default: true
+
+  redis_exporter.include_system_metrics:
+    description: Export basic system metrics from exporter host.
+    default: false
+
+  redis_exporter.include_modules_metrics:
+    description: Export Redis modules metrics.
+    default: false
+
+  redis_exporter.is_cluster:
+    description: Enable cluster-aware scraping (Redis Cluster).
+    default: false
+
+  redis_exporter.exclude_latency_histogram_metrics:
+    description: Do not collect latency histogram metrics.
+    default: false
+
+  redis_exporter.redis_only_metrics:
+    description: Export only Redis metrics (hide Go/runtime metrics).
+    default: false
+
+  redis_exporter.count_keys:
+    description: Patterns to count via SCAN (e.g. 'db0=app1:*,db0=sessions:*').
+    default: ""
+
+  redis_exporter.check_keys:
+    description: Key patterns to export value/size via SCAN (use sparingly).
+    default: ""
+
+  redis_exporter.check_single_keys:
+    description: Exact keys to export value/size (comma-separated).
+    default: ""
+
+  redis_exporter.check_streams:
+    description: Stream patterns to export stream/group/consumer info.
+    default: ""
+
+  redis_exporter.check_single_streams:
+    description: Exact streams to export info for (comma-separated).
+    default: ""

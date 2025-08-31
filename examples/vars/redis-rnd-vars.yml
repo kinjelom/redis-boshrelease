@@ -1,0 +1,5 @@
+redis_azs: [z2]
+redis_instances: 2
+redis_vm_type: default
+redis_persistent_disk_type: 5GB
+redis_password: change-me!

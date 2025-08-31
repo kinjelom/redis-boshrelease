@@ -1,101 +1,133 @@
 #!/bin/bash
+set -uo pipefail
 
-set -e # exit immediately if a simple command exits with a non-zero status
-set -u # report the usage of uninitialized variables
+export PATH=$PATH:/var/vcap/packages/redis/bin
 
-export PATH=$PATH:/var/vcap/packages/redis-4/bin
+<%-
+  port = link('redis').p('redis.port')
+  master = link("redis").instances.find { |r| r.bootstrap }.address
+  begin
+    node = link("redis").instances.find { |r| !r.bootstrap }
+    replica = node.address
+  rescue
+    replica = ""
+  end
 
+  admin_user = link('redis').p('redis.admin.user')
+  admin_pass = link('redis').p('redis.admin.password')
+
+  repl_enabled = "false"
+  repl_user = ""
+  repl_pass = ""
+  link("redis").if_p("redis.replication.enabled") do |enabled|
+    if enabled
+      repl_enabled = "true"
+      repl_user = link('redis').p('redis.replication.user')
+      repl_pass = link('redis').p('redis.replication.password')
+    end
+  end
+
+  test_key="sanity-tests-app:rats"
+-%>
+REPL_ENABLED='<%= repl_enabled %>'
 EXITSTATUS=0
 
-master=<%= link("redis").instances.find {|redis| redis.bootstrap }.address %>
-slave=<%= link("redis").instances.find {|redis| !redis.bootstrap }.address %>
-port="<%= link('redis').p('port') %>"
-password="<%= link('redis').p('password') %>"
+run_ok() {
+  "$@"
+  rc=$?
+  if [ $rc -ne 0 ]; then
+    echo "FAILED: $* (rc=$rc)"
+    EXITSTATUS=1
+  fi
+}
+
+run_fail() {
+  "$@" >/dev/null 2>/dev/null
+  rc=$?
+  if [ $rc -eq 0 ]; then
+    echo "FAILED (expected fail but rc=$rc): $*"
+    EXITSTATUS=1
+  fi
+}
 
 echo "-----"
-echo "TEST: Write/read to master"
-redis-cli -h $master -p $port -a $password set rats running
-rats=$(redis-cli -h $master -p $port -a $password get rats)
+echo "TEST: Write/read on master as admin"
+run_ok redis-cli -e -h '<%= master %>' -p <%= port %> --no-auth-warning --user '<%= admin_user %>' -a '<%= admin_pass %>' del '<%= test_key %>'  > /dev/null
+run_ok redis-cli -e -h '<%= master %>' -p <%= port %> --no-auth-warning --user '<%= admin_user %>' -a '<%= admin_pass %>' set '<%= test_key %>' testing  > /dev/null
+val="$(redis-cli -e -h '<%= master %>' -p <%= port %> --no-auth-warning --user '<%= admin_user %>' -a '<%= admin_pass %>' get '<%= test_key %>')"
+if [[ "$val" == "testing" ]]; then
+  echo "PASSED"
+else
+  echo "FAILED"; EXITSTATUS=1
+fi
 
-if [[ "${rats}" == "running" ]]
-then
+echo "-----"
+echo "TEST: Read from replica as admin"
+if [[ "$REPL_ENABLED" == "true" ]]; then
+  val="$(redis-cli -e -h '<%= replica %>' -p <%= port %> --no-auth-warning --user '<%= admin_user %>' -a '<%= admin_pass %>' get '<%= test_key %>')"
+  if [[ "$val" == "testing" ]]; then
+    echo "PASSED"
+  else
+    echo "FAILED"; EXITSTATUS=1
+  fi
+else
+  echo "SKIPPED: Replication disabled"
+fi
+
+echo "-----"
+echo "TEST: Wrong password should fail, WRONGPASS expected"
+run_fail redis-cli -e -h '<%= master %>' -p <%= port %> --no-auth-warning --user '<%= admin_user %>' -a "wrong-pass" set '<%= test_key %>' testing
+if [ $EXITSTATUS -eq 0 ]; then
   echo "PASSED"
 else
   echo "FAILED"
-  EXITSTATUS=1
 fi
 
 echo "-----"
-echo "TEST: Read from slave"
-rats=$(redis-cli -h $slave -p $port -a $password get rats)
-
-if [[ "${rats}" == "running" ]]
-then
+echo "TEST: No auth should fail, NOAUTH expected when default off"
+run_fail redis-cli -e -h '<%= master %>' -p <%= port %> --no-auth-warning get '<%= test_key %>'
+if [ $EXITSTATUS -eq 0 ]; then
   echo "PASSED"
 else
   echo "FAILED"
-  EXITSTATUS=1
 fi
 
-if [[ -n "$password" ]]
-then
-  echo "-----"
-  echo "TEST: Write/read to master: testing password requirement"
-  result="$(redis-cli -h $master -p $port -a "not-the-password" set rats testing-password-requirement)"
-  if [[ "$result" != *"NOAUTH Authentication required."* ]]
-  then
-    echo "FAILED: Was able to write to master with incorrect password"
-    EXITSTATUS=2
-  fi
-  rats=$(redis-cli -h $master -p $port -a "different-password" get rats)
-  if [[ "$rats" != *"NOAUTH Authentication required."* ]]
-  then
-    echo "FAILED: Was able to read from master with wrong password"
-    EXITSTATUS=2
-  fi
-  rats2=$(redis-cli -h $master -p $port get rats)
-  if [[ "$rats2" != *"NOAUTH Authentication required."* ]]
-  then
-    echo "FAILED: Was able to read from master with no password"
-    EXITSTATUS=2
-  fi
+echo "-----"
+echo "TEST: Master role sanity"
+role="$(redis-cli -e -h '<%= master %>' -p <%= port %> --no-auth-warning --user '<%= admin_user %>' -a '<%= admin_pass %>' ROLE | head -1)"
+if [[ "$role" == "master" ]]; then
+  echo "PASSED: Master role ($role) OK"
+else
+  echo "FAILED: master role = $role"; EXITSTATUS=1;
+fi
 
-  if [[ "${rats}" == "testing-password-requirement" ]]
-  then
-    echo "FAILED: Able to retrieve correct value with incorrect password"
-    EXITSTATUS=2
-  fi
-
-  if [[ "${rats2}" == "testing-password-requirement" ]]
-  then
-    echo "FAILED: Able to retrieve correct value with no password"
-    EXITSTATUS=2
-  fi
-  if [[ $EXITSTATUS == "2" ]]
-  then
-    EXITSTATUS=1
+echo "-----"
+echo "TEST: Replica role sanity"
+if [[ "$REPL_ENABLED" == "true" ]]; then
+  role="$(redis-cli -e -h '<%= replica %>' -p <%= port %> --no-auth-warning --user '<%= repl_user %>' -a '<%= repl_pass %>' ROLE | head -1 || true)"
+  if [[ "$role" == "slave" || "$role" == "replica" ]]; then
+    echo "PASSED: Replica role ($role) OK"
   else
-    echo "PASSED"
+    echo "FAILED: replica role = $role"; EXITSTATUS=1
   fi
+else
+  echo "SKIPPED: Replication disabled"
 fi
 
-if [[ -z "$password" ]]
-then
-  echo "-----"
-  echo "TEST: Write/read to master: testing empty password requirement"
-
-  rats=$(redis-cli -h $master -p $port get rats)
-  if [[ "$rats" == *"NOAUTH Authentication required."* ]]
-  then
-    echo "FAILED: Was unable to read from master with no password"
-    EXITSTATUS=2
-  fi
-  if [[ $EXITSTATUS == "2" ]]
-  then
-    EXITSTATUS=1
+echo "-----"
+echo "TEST: Replication user must NOT run data commands"
+if [[ "$REPL_ENABLED" == "true" ]]; then
+  run_fail redis-cli -e -h '<%= master %>' -p <%= port %> --no-auth-warning --user '<%= repl_user %>' -a '<%= repl_pass %>' set '<%= test_key %>' nope
+  run_fail redis-cli -e -h '<%= master %>' -p <%= port %> --no-auth-warning --user '<%= repl_user %>' -a '<%= repl_pass %>' get '<%= test_key %>'
+  if [ $EXITSTATUS -eq 0 ]; then
+    echo "PASSED"
   else
-    echo "PASSED"
+    echo "FAILED"
   fi
+else
+  echo "SKIPPED: Replication disabled"
 fi
 
+echo "-----"
+echo "Exit with status: $EXITSTATUS"
 exit $EXITSTATUS

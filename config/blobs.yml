@@ -1,4 +1,8 @@
-redis/redis-4.0.14.tar.gz:
-  size: 1740967
-  object_id: bb3292ec-9200-4143-46fa-8d3431e87fc3
-  sha: sha256:1e1e18420a86cfb285933123b04a82e1ebda20bfb0a289472745a087587e93a7
+redis/redis-8.2.1.tar.gz:
+  size: 3897326
+  object_id: 450cef4e-8b1b-4e1f-48f3-64db7c902db8
+  sha: sha256:e2c1cb9dd4180a35b943b85dfc7dcdd42566cdbceca37d0d0b14c21731582d3e
+redis_exporter/redis_exporter-v1.76.0.tar.gz:
+  size: 3881932
+  object_id: 2caf183c-aeb0-4c61-5e54-88d178fc9fad
+  sha: sha256:e97888acc18dc75d1e79afc28c934e60f0c99e4d69ae29d9f16e97e76e55bf10

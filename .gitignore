@@ -19,3 +19,8 @@ local*yml
 tmp
 creds.yml
 .log.txt
+.temp
+.idea
+.downloads
+prv-notes.md
+

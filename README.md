@@ -1,91 +1,36 @@
-# BOSH release for Redis
+# BOSH Release for Redis
 
-One of the fastest ways to get [redis](http://redis.io) running on any infrastructure is to deploy this bosh release. It can also be deployed to Kubernetes using Quarks/`cf-operator` and a Helm chart.
+Forked from [cloudfoundry-community/redis-boshrelease](https://github.com/cloudfoundry-community/redis-boshrelease). 
+Huge thanks to the original authors and community contributors! 🙏
 
-* [Concourse CI](https://pipes.starkandwayne.com/teams/cfcommunity/pipelines/redis-boshrelease)
-* Pull requests will be automatically tested against a bosh-lite (see `testflight-pr` job)
-* Discussions and CI notifications at [#redis-boshrelease channel](https://cloudfoundry.slack.com/messages/C6Q802GTC/) on https://slack.cloudfoundry.org
+This BOSH release providing **Redis** as a service and can be deployed in the following modes:
+- **single-node** (standalone),
+- **HA cluster with Sentinel** for automatic failover and high availability.
 
-Deploy Redis cluster with pre-compiled releases to a BOSH director:
+## Examples
 
-```plain
-bosh -d redis deploy \
-    <(curl -L https://raw.githubusercontent.com/cloudfoundry-community/redis-boshrelease/master/manifests/redis.yml)
-```
+The repository contains sample deployment manifests in [`examples/`](./examples):
+- **Single-node Redis** manifest [`redis-single.yml`](./examples/manifests/redis-single.yml)
+- **Redis + Sentinel HA cluster** manifest [`redis-ha.yml`](./examples/manifests/redis-ha.yml)
+- **Ops file for additional users** manifest [`additional-users.yml`](./examples/manifests/ops/additional-users.yml)
+- **The additional users tests script** [`examples/additional-users.sh`](./examples/additional-users-tests.sh)
 
-Deploy Redis cluster with pre-compiled Docker images to Kubernetes that is running Quarks (`cf-operator`) in the same namespace:
 
-```plain
-helm upgrade --install --wait --namespace kubecf \
-    redis-deployment \
-    ./quarks/helm/redis
-```
+## Features
 
-## BOSH usage
+- **Up to date Redis**  
+  Built from the latest stable Redis series.
 
-This repository includes base manifests and operator files. They can be used for initial deployments and subsequently used for updating your deployments.
+- **Sentinel support**  
+  Automatic leader election and failover, or simple standalone mode.
 
-To deploy a 2-node cluster:
+- **User management via ACL**  
+  Fine-grained access control for multiple users (e.g. admin, read-only, per-app accounts).
 
-```plain
-export BOSH_ENVIRONMENT=<alias>
-export BOSH_DEPLOYMENT=redis
+- **Prometheus metrics exporter**  
+  Integrated [`redis_exporter`](https://github.com/oliver006/redis_exporter) job to expose Redis metrics for Prometheus/Grafana monitoring.
 
-git clone https://github.com/cloudfoundry-community/redis-boshrelease.git
-bosh deploy redis-boshrelease/manifests/redis.yml
-```
+## Notes
 
-If your BOSH does not have Credhub/Config Server, then remember `--vars-store` to allow generation of passwords and certificates.
-
-```plain
-bosh deploy redis-boshrelease/manifests/redis.yml --vars-store creds.yml
-```
-
-If you have any errors about `Instance group 'redis' references an unknown vm type 'default'` or similar, there is a helper script to select a `vm_type` and `network` from your Cloud Config:
-
-```plain
-bosh deploy redis-boshrelease/manifests/redis.yml -o <(./manifests/operators/pick-from-cloud-config.sh)
-```
-
-### Sentinel
-
-**This is not a cluster_enabled redis deployment.**
-
-Redis Sentinel provides high availability for Redis. In this bosh release, you can include the redis-sentinel job to manage failover for 2 or more Redis instances in replication mode.
-
-**Note: Set "bind_static_ip" to true using the redis-sentinel job.**
-
-```plain
-[...]
-  instances: 3
-  jobs:
-[...]
-  - name: redis
-    release: redis
-    properties:
-      bind_static_ip: true
-      password: ((redis_password)
-  - name: redis-sentinel
-    release: redis
-```
-
-### Update
-
-When new versions of `redis-boshrelease` are released the `manifests/redis.yml` file will be updated. This means you can easily `git pull` and `bosh deploy` to upgrade.
-
-```plain
-export BOSH_ENVIRONMENT=<alias>
-export BOSH_DEPLOYMENT=redis
-cd redis-boshrelease
-git pull
-cd -
-bosh deploy redis-boshrelease/manifests/redis.yml
-```
-
-### Development
-
-To create/upload/deploy local changes to this BOSH release use the `create.yml` operator:
-
-```plain
-bosh -d redis deploy manifests/redis.yml -o manifests/operators/create.yml
-```
+- This fork currently has **no CI/CD pipeline** – builds and releases are managed manually.
+- Focus is on a clean, production-ready configuration with sensible defaults and BOSH templating.
