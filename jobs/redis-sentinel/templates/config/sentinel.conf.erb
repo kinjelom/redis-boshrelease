@@ -1,7 +1,5 @@
 <%-
   master_name = p("sentinel.master_name")
-  announce_ip = p("sentinel.announce_ip") rescue ""
-  announce_port = (p("sentinel.announce_port") rescue 0).to_i
 -%>
 daemonize no
 port <%= p("sentinel.port") %>
