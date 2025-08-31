@@ -1,0 +1,44 @@
+name: redis
+version: 16.0.0
+commit_hash: c230e24
+uncommitted_changes: false
+jobs:
+- name: redis
+  version: 8e2bc7fe917c676a5ffa0cd7b1cc1eb5f0f01395518da87e1d6504d0364ead45
+  fingerprint: 8e2bc7fe917c676a5ffa0cd7b1cc1eb5f0f01395518da87e1d6504d0364ead45
+  sha1: sha256:55c9797c88ad8bd6c3db6bbf28bc0b86d5139284f6b11fd1a33e9d7589a1c24a
+  packages:
+  - redis
+- name: redis-sentinel
+  version: 60da08651de69be50131a24a916a919aff986634d42a2f5a1c639393e5182a57
+  fingerprint: 60da08651de69be50131a24a916a919aff986634d42a2f5a1c639393e5182a57
+  sha1: sha256:1dbf64df6b518ea20fe52c998a94f7a433d1318f730b5fbdd4e5e7748cfabc04
+  packages:
+  - redis
+- name: redis_exporter
+  version: ca4f28d9264b1b7cf36852f4416e1b8bbbeb3c031c3dff4acdcec94ac4fa35af
+  fingerprint: ca4f28d9264b1b7cf36852f4416e1b8bbbeb3c031c3dff4acdcec94ac4fa35af
+  sha1: sha256:e729c38a169d3552b39bb8a4645e28e69593a5ff53679c985f908414bcfdd693
+  packages:
+  - redis_exporter
+- name: sanity-tests
+  version: 2b5e484a6d2f326c42c457d6ac06c99e1f0a695aa5379f29764d3f63453c511c
+  fingerprint: 2b5e484a6d2f326c42c457d6ac06c99e1f0a695aa5379f29764d3f63453c511c
+  sha1: sha256:03f3f722f24bbbbfb03725106e757841069fed4410d6aa691804bc989424a143
+  packages:
+  - redis
+packages:
+- name: redis
+  version: 1a06858bf79fccd24b25f5d48bcbf26b7f6e719d0cd9dbca521c684aa19c08f6
+  fingerprint: 1a06858bf79fccd24b25f5d48bcbf26b7f6e719d0cd9dbca521c684aa19c08f6
+  sha1: sha256:b9f7fc18d31d80714288238eb80d117bd8fcae1133007eb32d4499ed923cebbc
+  dependencies: []
+- name: redis_exporter
+  version: 7fe04014fe7d073d967049fa1c9030ed8fe7fc95ca3995fcab41d6cca96f3f8d
+  fingerprint: 7fe04014fe7d073d967049fa1c9030ed8fe7fc95ca3995fcab41d6cca96f3f8d
+  sha1: sha256:5e789d9450e4fa59edd476a2d4635f0aa256610fc2bed035a16eb0da45780030
+  dependencies: []
+license:
+  version: 06fe45897b08088c04a79479908ee81b9482e725ede52981486061d486f8f32e
+  fingerprint: 06fe45897b08088c04a79479908ee81b9482e725ede52981486061d486f8f32e
+  sha1: sha256:65de109d22f3f58b90076683f6cc15f6448d4e162f741027db8de3ac1fb64f18
